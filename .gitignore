@@ -52,6 +52,6 @@ flycheck_*.el
 /network-security.data
 
 # build directory
-/build/*
+build/
 
 # End of https://www.toptal.com/developers/gitignore/api/emacs
