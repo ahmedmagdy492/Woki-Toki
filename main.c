@@ -13,8 +13,8 @@
 // TBD
 #endif
 
-#define WIDTH 768
-#define HEIGHT 546
+#define WIDTH 600
+#define HEIGHT 400
 
 GtkWidget* window;
 WIN_HANDLE server_thread_handle = NULL;
@@ -76,8 +76,23 @@ static void sendBtnClicked(GtkWidget* btn, gpointer user_data) {
     int result = send_data("ahmed", 6, ip);
 
     if(result != 0) {
-      GtkAlertDialog* dialog = gtk_alert_dialog_new("Connection result: %d", result);
-      gtk_alert_dialog_show(dialog, GTK_WINDOW(window));
+      switch(result) {
+      case -1:
+	GtkAlertDialog* dialog = gtk_alert_dialog_new("Network Error");
+	gtk_alert_dialog_show(dialog, GTK_WINDOW(window));
+	break;
+      case -2:
+	dialog = gtk_alert_dialog_new("Network Error");
+	gtk_alert_dialog_show(dialog, GTK_WINDOW(window));
+	break;
+      case -3:
+	dialog = gtk_alert_dialog_new("Please enter a valid IP");
+	gtk_alert_dialog_show(dialog, GTK_WINDOW(window));
+      case -4:
+	dialog = gtk_alert_dialog_new("Unable to connect to remote server");
+	gtk_alert_dialog_show(dialog, GTK_WINDOW(window));
+	break;
+      }
     }
     else {
       GtkAlertDialog* dialog = gtk_alert_dialog_new("Sent Message");
@@ -91,17 +106,26 @@ static void on_active(GtkApplication* app, gpointer user_data) {
 
   gtk_window_set_title(GTK_WINDOW(window), "Woki Toki");
   gtk_window_set_default_size(GTK_WINDOW(window), WIDTH, HEIGHT);
+  gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
 
   // add widgets
   GtkWidget* container = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+  gtk_widget_set_margin_top(GTK_WIDGET(container), 100);
   
-  GtkWidget* ip_txt = gtk_label_new("Please Enter IP of Other the Device");
+  GtkWidget* ip_txt = gtk_label_new("Please enter the IP of the other device");
   gtk_box_append(GTK_BOX(container), ip_txt);
 
   GtkWidget* entry = gtk_entry_new();
+  gtk_entry_set_placeholder_text(GTK_ENTRY(entry), "IP Address i.e 0.0.0.0");
+  gtk_widget_set_size_request(GTK_WIDGET(entry), 100, -1);
+  gtk_widget_set_hexpand(GTK_WIDGET(entry), FALSE);
+  gtk_widget_set_halign(GTK_WIDGET(entry), GTK_ALIGN_CENTER);
   gtk_box_append(GTK_BOX(container), entry);
 
-  GtkWidget* sendBtn = gtk_button_new_with_label("Send");
+  GtkWidget* sendBtn = gtk_button_new_with_label("Record and Send");
+  gtk_widget_set_size_request(GTK_WIDGET(sendBtn), 100, -1);
+  gtk_widget_set_hexpand(GTK_WIDGET(sendBtn), FALSE);
+  gtk_widget_set_halign(GTK_WIDGET(sendBtn), GTK_ALIGN_CENTER);
   g_signal_connect(GTK_WIDGET(sendBtn), "clicked", G_CALLBACK(sendBtnClicked), entry);
   gtk_box_append(GTK_BOX(container), sendBtn);
 
