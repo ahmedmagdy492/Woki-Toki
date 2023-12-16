@@ -10,20 +10,36 @@
 #define WIN_DWORD DWORD
 #define WIN_LPVOID LPVOID
 #elif __linux__
-// TBD
+#include "lin_net_client.h"
 #endif
 
 #define WIDTH 600
 #define HEIGHT 400
 
 GtkWidget* window;
-WIN_HANDLE server_thread_handle = NULL;
+
+void show_dialog(char* text) {
+  #ifdef _WIN32
+  GtkAlertDialog* dialog = gtk_alert_dialog_new(text);
+  gtk_alert_dialog_show(dialog, GTK_WINDOW(window));
+  #else
+  GtkDialogFlags flags = GTK_DIALOG_DESTROY_WITH_PARENT | GTK_DIALOG_MODAL;
+  GtkWidget* dialog = gtk_message_dialog_new (GTK_WINDOW(window),
+                                 flags,
+                                 GTK_MESSAGE_ERROR,
+                                 GTK_BUTTONS_CLOSE,
+                                 text);
+
+  g_signal_connect (dialog, "response",
+		   G_CALLBACK (gtk_window_destroy),
+		   NULL);
+  #endif
+}
 
 #ifdef _WIN32
+WIN_HANDLE server_thread_handle = NULL;
+
 WIN_DWORD server_bg_thread(WIN_LPVOID* data)
-#else
-WIN_DWORD server_bg_thread(void* data) // consider changing this to the linux one
-#endif
 {
   int is_running = 1, result = 0;
 
@@ -58,6 +74,7 @@ WIN_DWORD server_bg_thread(void* data) // consider changing this to the linux on
   cleanup();
   return 0;
 }
+#endif
 
 
 // UI callbacks begin
@@ -69,8 +86,7 @@ static void sendBtnClicked(GtkWidget* btn, gpointer user_data) {
   int ip_len = strlen(ip);
 
   if(strncmp(ip, "", ip_len) == 0) {
-    GtkAlertDialog* dialog = gtk_alert_dialog_new("Please enter a valid IP");
-    gtk_alert_dialog_show(dialog, GTK_WINDOW(window));
+    show_dialog("Please enter a valid IP");
   }
   else {
     int result = send_data("ahmed", 6, ip);
@@ -78,25 +94,20 @@ static void sendBtnClicked(GtkWidget* btn, gpointer user_data) {
     if(result != 0) {
       switch(result) {
       case -1:
-	GtkAlertDialog* dialog = gtk_alert_dialog_new("Network Error");
-	gtk_alert_dialog_show(dialog, GTK_WINDOW(window));
+	show_dialog("Network Error");
 	break;
       case -2:
-	dialog = gtk_alert_dialog_new("Network Error");
-	gtk_alert_dialog_show(dialog, GTK_WINDOW(window));
+	show_dialog("Network Error");
 	break;
       case -3:
-	dialog = gtk_alert_dialog_new("Please enter a valid IP");
-	gtk_alert_dialog_show(dialog, GTK_WINDOW(window));
+	show_dialog("Please enter a valid IP");
       case -4:
-	dialog = gtk_alert_dialog_new("Unable to connect to remote server");
-	gtk_alert_dialog_show(dialog, GTK_WINDOW(window));
+	show_dialog("Unable to connect to remote server");
 	break;
       }
     }
     else {
-      GtkAlertDialog* dialog = gtk_alert_dialog_new("Sent Message");
-      gtk_alert_dialog_show(dialog, GTK_WINDOW(window));
+      show_dialog("Sent Message");
     }
   }
 }
