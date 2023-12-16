@@ -11,6 +11,9 @@
 #define WIN_LPVOID LPVOID
 #elif __linux__
 #include "lin_net_client.h"
+#include "lin_net_server.h"
+#include <pthread.h>
+#include <errno.h>
 #endif
 
 #define WIDTH 600
@@ -38,7 +41,6 @@ void show_dialog(char* text) {
 
 #ifdef _WIN32
 WIN_HANDLE server_thread_handle = NULL;
-
 WIN_DWORD server_bg_thread(WIN_LPVOID* data)
 {
   int is_running = 1, result = 0;
@@ -73,6 +75,36 @@ WIN_DWORD server_bg_thread(WIN_LPVOID* data)
 
   cleanup();
   return 0;
+}
+#elif __linux__
+void* server_bg_thread(void* data)
+{
+  int is_running = 1, result = 0;
+
+  result = setup_sock_server();
+  if(result != 0) {
+    cleanup();
+    return NULL;
+  }
+
+  char buffer[REC_BUFF_LEN];
+
+  while(is_running) {
+    result = accept_client();
+    if(result == 0) {
+      // start receiving data
+      memset(buffer, 0, REC_BUFF_LEN);
+      int len = 0;
+      result = recv_data(buffer, &len);
+      if(result == 0) {
+	// successfully received data
+	// TBD(ahmed): play the audio
+      }
+    }
+  }
+
+  cleanup();
+  return NULL;
 }
 #endif
 
@@ -152,7 +184,12 @@ int main(int argc, char** argv) {
   #ifdef _WIN32
   server_thread_handle = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)server_bg_thread, NULL, 0, NULL);
   #elif __linux__
-
+  pthread_t thread_id;
+  int result = 0;
+  result = pthread_create(&thread_id, NULL, server_bg_thread, NULL);
+  if(result == -1) {
+    perror("while create background thread");
+  }
   #endif
 
   GtkApplication* app = gtk_application_new("io.github.ahmedmagdy492", G_APPLICATION_DEFAULT_FLAGS);
@@ -166,7 +203,7 @@ int main(int argc, char** argv) {
   #ifdef _WIN32
   CloseHandle(server_thread_handle);
   #elif __linux__
-
+  pthread_join(thread_id, NULL);
   #endif
 
   return status;
