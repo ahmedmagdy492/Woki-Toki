@@ -1,4 +1,5 @@
 #include <gtk/gtk.h>
+#include "audio_record.h"
 
 #include <string.h>
 
@@ -19,24 +20,15 @@
 #define WIDTH 600
 #define HEIGHT 400
 
-GtkWidget* window;
+static GtkWidget* window;
+static int recording = 0;
 
 void show_dialog(char* text) {
   #ifdef _WIN32
   GtkAlertDialog* dialog = gtk_alert_dialog_new(text);
   gtk_alert_dialog_show(dialog, GTK_WINDOW(window));
-  #else
-  GtkDialogFlags flags = GTK_DIALOG_DESTROY_WITH_PARENT | GTK_DIALOG_MODAL;
-  GtkWidget* dialog = gtk_message_dialog_new (GTK_WINDOW(window),
-                                 flags,
-                                 GTK_MESSAGE_ERROR,
-                                 GTK_BUTTONS_CLOSE,
-                                 text);
-
-  g_signal_connect (dialog, "response",
-		   G_CALLBACK (gtk_window_destroy),
-		   NULL);
   #endif
+  // TODO: find another option for gtk versions before 4.10
 }
 
 #ifdef _WIN32
@@ -121,25 +113,45 @@ static void sendBtnClicked(GtkWidget* btn, gpointer user_data) {
     show_dialog("Please enter a valid IP");
   }
   else {
-    int result = send_data("ahmed", 6, ip);
+    // recording audio
+    int result;
 
-    if(result != 0) {
-      switch(result) {
-      case -1:
-	show_dialog("Network Error");
-	break;
-      case -2:
-	show_dialog("Network Error");
-	break;
-      case -3:
-	show_dialog("Please enter a valid IP");
-      case -4:
-	show_dialog("Unable to connect to remote server");
-	break;
+    if(recording == 0) {
+      recording = 1;
+      result = record_audio();
+      if(result == 0) {
+	gtk_button_set_label(GTK_BUTTON(btn), "Recording Now");
+	printf("recording audio now...\n");
       }
     }
     else {
-      show_dialog("Sent Message");
+      recording = 0;
+      stop_record_audio();
+      gtk_button_set_label(GTK_BUTTON(btn), "Sending...");
+    }
+    
+    if(recording == 0) {
+      result = send_data(get_record_buf(), 6, ip);
+      gtk_button_set_label(GTK_BUTTON(btn), "Record and Send");
+
+      if(result != 0) {
+	switch(result) {
+	case -1:
+	  show_dialog("Network Error");
+	  break;
+	case -2:
+	  show_dialog("Network Error");
+	  break;
+	case -3:
+	  show_dialog("Please enter a valid IP");
+	case -4:
+	  show_dialog("Unable to connect to remote server");
+	  break;
+	}
+      }
+      else {
+	show_dialog("Sent Message");
+      }
     }
   }
 }
@@ -200,11 +212,19 @@ int main(int argc, char** argv) {
 
   g_object_unref(app);
 
+  printf("Cleaning up...\n");
+
   #ifdef _WIN32
   CloseHandle(server_thread_handle);
   #elif __linux__
-  pthread_join(thread_id, NULL);
+  pthread_cancel(thread_id);
   #endif
+
+  if(recording) {
+    stop_record_audio();
+  }
+
+  clear_buffer();
 
   return status;
 }
