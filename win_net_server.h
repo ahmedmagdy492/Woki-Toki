@@ -5,8 +5,8 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <windows.h>
+#include "types.h"
 
-#define PORT 35780
 #define REC_BUFF_LEN 4096
 
 static int server_sock = -1;

@@ -1,6 +1,4 @@
 #include <gtk/gtk.h>
-#include "audio_record.h"
-
 #include <string.h>
 
 #ifdef _WIN32
@@ -53,14 +51,14 @@ WIN_DWORD server_bg_thread(WIN_LPVOID* data)
 
   while(is_running) {
     result = accept_client();
+    printf("Someone has just connected\n");
     if(result == 0) {
       // start receiving data
       memset(buffer, 0, REC_BUFF_LEN);
       int len = 0;
       result = recv_data(buffer, &len);
       if(result == 0) {
-	// successfully received data
-	// TBD(ahmed): play the audio
+	
       }
     }
   }
@@ -113,26 +111,15 @@ static void sendBtnClicked(GtkWidget* btn, gpointer user_data) {
     show_dialog("Please enter a valid IP");
   }
   else {
-    // recording audio
     int result;
 
-    if(recording == 0) {
-      recording = 1;
-      result = record_audio();
-      if(result == 0) {
-	gtk_button_set_label(GTK_BUTTON(btn), "Recording Now");
-	printf("recording audio now...\n");
-      }
+    // TODO: find some type of simple audio library to use
+
+    if(1) {
+
     }
     else {
-      recording = 0;
-      stop_record_audio();
-      gtk_button_set_label(GTK_BUTTON(btn), "Sending...");
-    }
-    
-    if(recording == 0) {
-      result = send_data(get_record_buf(), 6, ip);
-      gtk_button_set_label(GTK_BUTTON(btn), "Record and Send");
+      result = send_data("failed to record", 6, ip);
 
       if(result != 0) {
 	switch(result) {
@@ -219,12 +206,6 @@ int main(int argc, char** argv) {
   #elif __linux__
   pthread_cancel(thread_id);
   #endif
-
-  if(recording) {
-    stop_record_audio();
-  }
-
-  clear_buffer();
 
   return status;
 }

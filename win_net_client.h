@@ -5,8 +5,8 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <windows.h>
+#include "types.h"
 
-#define PORT 35780
 
 static int result = 0;
 

@@ -5,8 +5,8 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <netinet/in.h>
+#include "types.h"
 
-#define PORT 35780
 #define REC_BUFF_LEN 4069
 
 static int server_sock = -1;
