@@ -6,6 +6,6 @@ is basically a c application that emulates the real world woki-toki but instead 
 
 # Main Components
 - GTK+4 as a UI framework
-- Audio recording and playing using SDL2
+- Audio recording and playing using [Not Yet Determined]
 - Networking using barkely sockets on linux and winsock2 on windows
 - Threading using pthread on linux and processthreadsapi on windows
