@@ -1,15 +1,15 @@
 #include <gtk/gtk.h>
 #include <string.h>
+#include "record_audio.h"
+#include "play_audio.h"
 
 #ifdef _WIN32
-#include "win_net_client.h"
 #include "win_net_server.h"
 #include <processthreadsapi.h>
 #define WIN_HANDLE HANDLE
 #define WIN_DWORD DWORD
 #define WIN_LPVOID LPVOID
 #elif __linux__
-#include "lin_net_client.h"
 #include "lin_net_server.h"
 #include <pthread.h>
 #include <errno.h>
@@ -87,8 +87,7 @@ void* server_bg_thread(void* data)
       int len = 0;
       result = recv_data(buffer, &len);
       if(result == 0) {
-	// successfully received data
-	// TBD(ahmed): play the audio
+	save_file(buffer, REC_BUFF_LEN);
       }
     }
   }
@@ -113,32 +112,25 @@ static void sendBtnClicked(GtkWidget* btn, gpointer user_data) {
   else {
     int result;
 
-    // TODO: find some type of simple audio library to use
+    result = record_audio(ip);
 
-    if(1) {
-
+    if(result != 0) {
+      switch(result) {
+      case -1:
+	show_dialog("Failed to init SDL2");
+	break;
+      case -2:
+	show_dialog("Failed to open audio device");
+	break;
+      case -3:
+	show_dialog("Network Error");
+      case -4:
+	show_dialog("Unable to connect to remote server");
+	break;
+      }
     }
     else {
-      result = send_data("failed to record", 6, ip);
-
-      if(result != 0) {
-	switch(result) {
-	case -1:
-	  show_dialog("Network Error");
-	  break;
-	case -2:
-	  show_dialog("Network Error");
-	  break;
-	case -3:
-	  show_dialog("Please enter a valid IP");
-	case -4:
-	  show_dialog("Unable to connect to remote server");
-	  break;
-	}
-      }
-      else {
-	show_dialog("Sent Message");
-      }
+      show_dialog("Sent Message");
     }
   }
 }
